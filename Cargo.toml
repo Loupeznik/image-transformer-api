@@ -1,0 +1,14 @@
+[package]
+name = "image_transformer_api"
+version = "1.0.0"
+edition = "2024"
+
+[dependencies]
+axum = { version = "0.7", features = ["multipart"] }
+tokio = { version = "1.0", features = ["full"] }
+tower-http = { version = "0.5", features = ["cors"] }
+image = { version = "0.24", features = ["webp", "jpeg", "png"] }
+webp = "0.3.0"
+serde = { version = "1.0", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
