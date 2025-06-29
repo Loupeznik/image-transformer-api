@@ -3,7 +3,7 @@ use axum::{
     extract::Multipart,
     http::{header, StatusCode},
     response::{IntoResponse, Response},
-    routing::post,
+    routing::{get, post},
     Router,
 };
 use image::{DynamicImage, ImageFormat};
@@ -25,6 +25,7 @@ async fn main() {
     let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any);
 
     let app = Router::new()
+        .route("/healthz", get(health_check))
         .route("/transform", post(transform_image_handler))
         .layer(cors);
 
@@ -32,6 +33,10 @@ async fn main() {
     tracing::debug!("listening on {}", addr);
     let listener = TcpListener::bind(&addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
+}
+
+async fn health_check() -> &'static str {
+    "OK"
 }
 
 /// Handler for the /transform endpoint.
