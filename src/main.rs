@@ -1,6 +1,6 @@
 use axum::{
     body::Bytes,
-    extract::Multipart,
+    extract::{DefaultBodyLimit, Multipart},
     http::{header, StatusCode},
     response::{IntoResponse, Response},
     routing::{get, post},
@@ -29,6 +29,8 @@ async fn main() {
     let app = Router::new()
         .route("/healthz", get(health_check))
         .route("/transform", post(transform_image_handler))
+        .layer(DefaultBodyLimit::disable())
+        .layer(DefaultBodyLimit::max(100 * 1024 * 1024))
         .layer(
             TraceLayer::new_for_http()
                 .on_response(trace::DefaultOnResponse::new().level(Level::INFO))
