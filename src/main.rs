@@ -11,13 +11,15 @@ use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tower_http::trace::{self, TraceLayer};
+use tracing::Level;
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "image_transformer_api=debug".into()),
+                .unwrap_or_else(|_| "image_transformer_api=info,tower_http=info".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -27,6 +29,11 @@ async fn main() {
     let app = Router::new()
         .route("/healthz", get(health_check))
         .route("/transform", post(transform_image_handler))
+        .layer(
+            TraceLayer::new_for_http()
+                .on_response(trace::DefaultOnResponse::new().level(Level::INFO))
+                .on_failure(trace::DefaultOnFailure::new().level(Level::ERROR))
+        )
         .layer(cors);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
@@ -93,8 +100,8 @@ fn process_image(image_bytes: Bytes, size_str: Option<String>, quality: Option<f
     let image_format = image::guess_format(&image_bytes)
         .map_err(|_| AppError::new(StatusCode::BAD_REQUEST, "Could not determine image format"))?;
 
-    if image_format != ImageFormat::Png && image_format != ImageFormat::Jpeg {
-        return Err(AppError::new(StatusCode::BAD_REQUEST, "Input image must be PNG or JPG"));
+    if ![ImageFormat::Png, ImageFormat::Jpeg, ImageFormat::WebP].contains(&image_format) {
+        return Err(AppError::new(StatusCode::BAD_REQUEST, "Input image must be PNG, JPG, or WebP"));
     }
 
     let mut img = image::load_from_memory(&image_bytes)
@@ -154,6 +161,12 @@ impl AppError {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
+        if self.status_code.is_server_error() {
+            tracing::error!(status = %self.status_code, error = %self.message);
+        } else if self.status_code.is_client_error() {
+            tracing::warn!(status = %self.status_code, error = %self.message);
+        }
+
         (self.status_code, self.message).into_response()
     }
 }
