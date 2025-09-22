@@ -114,15 +114,6 @@ curl -X POST http://localhost:3000/transform \
   -o compressed_output.webp
 ```
 
-### Using with wget
-
-```bash
-wget --post-file=input.jpg \
-  --header="Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW" \
-  http://localhost:3000/transform \
-  -O output.webp
-```
-
 ## Local Development Environment
 
 ### Prerequisites
