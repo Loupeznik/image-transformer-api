@@ -36,7 +36,6 @@ docker run -p 3000:3000 ghcr.io/loupeznik/image-transformer-api:master
 Create a `docker-compose.yml` file:
 
 ```yaml
-version: '3.8'
 services:
   image-transformer-api:
     image: ghcr.io/loupeznik/image-transformer-api:master
